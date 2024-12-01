@@ -1,0 +1,154 @@
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+
+public class MovieBookingApp extends JFrame {
+    private JTable movieTable;
+    private JComboBox<String> sortSelector;
+    private JButton sortButton, bookButton;
+    
+    private String[][] movies = {
+            {"Spider-Man", "15:30", "50000", "10"},
+            {"The Batman", "18:00", "60000", "5"},
+            {"Avatar 2", "14:00", "70000", "8"},
+            {"Fast & Furious", "20:00", "55000", "15"},
+            {"Frozen", "13:30", "45000", "12"}
+    };
+
+    private String[] columns = {"Title", "Time", "Price", "Available Seats"};
+
+    public MovieBookingApp() {
+        setTitle("Movie Booking Application");
+        setSize(600, 400);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLocationRelativeTo(null);
+        initUI();
+    }
+
+    private void initUI() {
+        
+        movieTable = new JTable(movies, columns);
+        JScrollPane tableScroll = new JScrollPane(movieTable);
+
+        
+        JPanel sortPanel = new JPanel(new FlowLayout());
+        JLabel sortLabel = new JLabel("Sort by:");
+        String[] sortOptions = {"Time", "Price"};
+        sortSelector = new JComboBox<>(sortOptions);
+        sortButton = new JButton("Sort");
+        sortButton.addActionListener(new SortButtonListener());
+        sortPanel.add(sortLabel);
+        sortPanel.add(sortSelector);
+        sortPanel.add(sortButton);
+
+        
+        bookButton = new JButton("Book Tickets");
+        bookButton.addActionListener(new BookButtonListener());
+
+       
+        setLayout(new BorderLayout());
+        add(tableScroll, BorderLayout.CENTER);
+        add(sortPanel, BorderLayout.NORTH);
+        add(bookButton, BorderLayout.SOUTH);
+    }
+
+    private class SortButtonListener implements ActionListener {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            int selectedIndex = sortSelector.getSelectedIndex();
+            if (selectedIndex == 0) {
+                bubbleSortByTime(movies);
+            } else if (selectedIndex == 1) {
+                selectionSortByPrice(movies);
+            }
+            movieTable.repaint();
+        }
+    }
+
+    private class BookButtonListener implements ActionListener {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            int[] selectedRows = movieTable.getSelectedRows();
+            if (selectedRows.length == 0) {
+                JOptionPane.showMessageDialog(MovieBookingApp.this, "Please select at least one movie to book.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            StringBuilder bookingDetails = new StringBuilder("Booking Summary:\n");
+
+            for (int row : selectedRows) {
+                String title = movies[row][0];
+                String time = movies[row][1];
+                int price = Integer.parseInt(movies[row][2]);
+                int availableSeats = Integer.parseInt(movies[row][3]);
+
+                // Input jumlah tiket
+                String input = JOptionPane.showInputDialog(MovieBookingApp.this,
+                        "Enter number of tickets for " + title + ":", "1");
+                if (input == null || input.isEmpty()) return;
+
+                try {
+                    int ticketCount = Integer.parseInt(input);
+                    if (ticketCount <= 0) {
+                        JOptionPane.showMessageDialog(MovieBookingApp.this, "Number of tickets must be greater than zero.", "Error", JOptionPane.ERROR_MESSAGE);
+                        return;
+                    }
+
+                    if (ticketCount > availableSeats) {
+                        JOptionPane.showMessageDialog(MovieBookingApp.this, "Not enough available seats for " + title + ".", "Error", JOptionPane.ERROR_MESSAGE);
+                        return;
+                    }
+
+                    // Update available seats
+                    movies[row][3] = String.valueOf(availableSeats - ticketCount);
+
+                    int totalPrice = price * ticketCount;
+                    bookingDetails.append("Title: " + title + "\n")
+                            .append("Time: " + time + "\n")
+                            .append("Price per Ticket: " + price + "\n")
+                            .append("Number of Tickets: " + ticketCount + "\n")
+                            .append("Total Price: " + totalPrice + "\n\n");
+                } catch (NumberFormatException ex) {
+                    JOptionPane.showMessageDialog(MovieBookingApp.this, "Invalid input. Please enter a valid number of tickets.", "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+
+            JOptionPane.showMessageDialog(MovieBookingApp.this, bookingDetails.toString(), "Booking Confirmation", JOptionPane.INFORMATION_MESSAGE);
+            movieTable.repaint();
+        }
+    }
+
+    private void bubbleSortByTime(String[][] data) {
+        for (int i = 0; i < data.length - 1; i++) {
+            for (int j = 0; j < data.length - i - 1; j++) {
+                if (data[j][1].compareTo(data[j + 1][1]) > 0) {
+                    String[] temp = data[j];
+                    data[j] = data[j + 1];
+                    data[j + 1] = temp;
+                }
+            }
+        }
+    }
+
+    private void selectionSortByPrice(String[][] data) {
+        for (int i = 0; i < data.length - 1; i++) {
+            int minIdx = i;
+            for (int j = i + 1; j < data.length; j++) {
+                if (Integer.parseInt(data[j][2]) < Integer.parseInt(data[minIdx][2])) {
+                    minIdx = j;
+                }
+            }
+            String[] temp = data[i];
+            data[i] = data[minIdx];
+            data[minIdx] = temp;
+        }
+    }
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> {
+            MovieBookingApp app = new MovieBookingApp();
+            app.setVisible(true);
+        });
+    }
+}
